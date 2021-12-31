@@ -1,0 +1,85 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: test-
+  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.10, pipelines.kubeflow.org/pipeline_compilation_time: '2021-12-31T12:11:11.003294',
+    pipelines.kubeflow.org/pipeline_spec: '{"description": "test", "name": "Test"}'}
+  labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.10}
+spec:
+  entrypoint: test
+  templates:
+  - name: sample-task1
+    container:
+      args: [--input-path, /tmp/inputs/input_path/data, --json-option-path, /tmp/inputs/json_option_path/data,
+        --output-path, /tmp/outputs/output_path/data]
+      command: [python3, main.py]
+      image: python:3.8-slim
+    inputs:
+      artifacts:
+      - name: input_path
+        path: /tmp/inputs/input_path/data
+        raw: {data: hogehoge/fugafuga}
+      - name: json_option_path
+        path: /tmp/inputs/json_option_path/data
+        raw: {data: .}
+    outputs:
+      artifacts:
+      - {name: sample-task1-output_path, path: /tmp/outputs/output_path/data}
+    metadata:
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.10
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+      annotations: {pipelines.kubeflow.org/component_spec: '{"description": "sample
+          task1", "implementation": {"container": {"args": ["--input-path", {"inputPath":
+          "input_path"}, "--json-option-path", {"inputPath": "json_option_path"},
+          "--output-path", {"outputPath": "output_path"}], "command": ["python3",
+          "main.py"], "image": "python:3.8-slim"}}, "inputs": [{"default": ".", "name":
+          "input_path", "type": "String"}, {"default": ".", "name": "json_option_path",
+          "type": "String"}], "name": "sample-task1", "outputs": [{"description":
+          "Output", "name": "output_path", "type": "String"}]}', pipelines.kubeflow.org/component_ref: '{"digest":
+          "ab24a02bfd3c8c3078c74423c9f438b1360f4c5e045d6407e9650bcac2f9d38f", "url":
+          "./components/task1/component.yaml"}'}
+  - name: sample-task1-2
+    container:
+      args: [--input-path, /tmp/inputs/input_path/data, --json-option-path, /tmp/inputs/json_option_path/data,
+        --output-path, /tmp/outputs/output_path/data]
+      command: [python3, main.py]
+      image: python:3.8-slim
+    inputs:
+      artifacts:
+      - {name: sample-task1-output_path, path: /tmp/inputs/input_path/data}
+      - name: json_option_path
+        path: /tmp/inputs/json_option_path/data
+        raw: {data: .}
+    outputs:
+      artifacts:
+      - {name: sample-task1-2-output_path, path: /tmp/outputs/output_path/data}
+    metadata:
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.10
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+      annotations: {pipelines.kubeflow.org/component_spec: '{"description": "sample
+          task1", "implementation": {"container": {"args": ["--input-path", {"inputPath":
+          "input_path"}, "--json-option-path", {"inputPath": "json_option_path"},
+          "--output-path", {"outputPath": "output_path"}], "command": ["python3",
+          "main.py"], "image": "python:3.8-slim"}}, "inputs": [{"default": ".", "name":
+          "input_path", "type": "String"}, {"default": ".", "name": "json_option_path",
+          "type": "String"}], "name": "sample-task1", "outputs": [{"description":
+          "Output", "name": "output_path", "type": "String"}]}', pipelines.kubeflow.org/component_ref: '{"digest":
+          "ab24a02bfd3c8c3078c74423c9f438b1360f4c5e045d6407e9650bcac2f9d38f", "url":
+          "./components/task1/component.yaml"}'}
+  - name: test
+    dag:
+      tasks:
+      - {name: sample-task1, template: sample-task1}
+      - name: sample-task1-2
+        template: sample-task1-2
+        dependencies: [sample-task1]
+        arguments:
+          artifacts:
+          - {name: sample-task1-output_path, from: '{{tasks.sample-task1.outputs.artifacts.sample-task1-output_path}}'}
+  arguments:
+    parameters: []
+  serviceAccountName: pipeline-runner
